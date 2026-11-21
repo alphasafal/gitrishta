@@ -78,7 +78,8 @@ async function toPng(): Promise<Blob | null> {
   if (!card) return null;
   const { toBlob } = await import('html-to-image');
   return toBlob(card, { pixelRatio: 2, backgroundColor: '#fff8ec', cacheBust: false,
-    imagePlaceholder: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=' });
+    imagePlaceholder: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=',
+    style: { boxShadow: 'none', margin: '0', animation: 'none' } });
 }
 const fileName = () => `gitrishta-${new URLSearchParams(location.search).get('u') ?? 'biodata'}.png`;
 
