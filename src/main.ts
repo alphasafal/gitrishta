@@ -4,13 +4,19 @@ import '@fontsource/mukta/600.css';
 import './style.css';
 import { buildBiodata, matchKundli } from './biodata';
 import { fetchProfile, GhError, parseUsername } from './github';
-import { renderBiodata, renderMatch } from './render';
+import { renderBiodata, renderMatch, THEMES, type Opts, type Theme } from './render';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const form = $('form') as HTMLFormElement, u1 = $<HTMLInputElement>('u1'), u2 = $<HTMLInputElement>('u2');
 const out = $('out'), status = $('status'), actions = $('actions');
 const site = (location.host + location.pathname).replace(/\/(index\.html)?$/, '') || 'gitrishta';
 let mode: 'single' | 'match' = 'single', run = 0, shareText = '';
+let last: (() => HTMLElement) | null = null;
+const qs0 = new URLSearchParams(location.search);
+const opts: Opts = {
+  site, hindi: qs0.get('l') === 'hi',
+  theme: (THEMES as readonly string[]).includes(qs0.get('t') ?? '') ? (qs0.get('t') as Theme) : 'north',
+};
 
 const LOADING = ['Pandit ji is reading your commits…', 'Checking your kundli against main…', 'Asking Sharma aunty about your PRs…', 'Counting stars (the GitHub kind)…'];
 
@@ -44,23 +50,22 @@ async function go(a: string, b?: string) {
   let i = 0;
   status.textContent = LOADING[0]!;
   const tick = setInterval(() => { status.textContent = LOADING[++i % LOADING.length]!; }, 1400);
-  out.replaceChildren(); actions.hidden = true;
+  out.replaceChildren(); actions.hidden = true; last = null;
   try {
     const pa = await fetchProfile(la).catch((e) => { throw [e, la]; });
     const pb = lb ? await fetchProfile(lb).catch((e) => { throw [e, lb]; }) : null;
     if (id !== run) return;
     const ba = buildBiodata(pa);
-    const q = new URLSearchParams({ u: pa.user.login, ...(pb && { m: pb.user.login }) });
-    history.replaceState(null, '', `?${q}`);
     if (pb) {
       const bb = buildBiodata(pb), m = matchKundli(pa, pb);
-      out.replaceChildren(renderMatch(ba, bb, m, site));
+      last = () => renderMatch(ba, bb, m, opts);
       shareText = `@${ba.login} × @${bb.login}: ${m.score}/36 gunas matched on GitRishta. ${m.verdict}`;
     } else {
-      out.replaceChildren(renderBiodata(ba, site));
+      last = () => renderBiodata(ba, opts);
       shareText = `My GitHub shaadi biodata: ${ba.gunas}/36 gunas. ${ba.sections[0]!.rows.find((r) => r[0] === 'Manglik')![1]}. Make yours:`;
     }
     status.textContent = '';
+    paint(pa.user.login, pb?.user.login);
     const url = location.href;
     ($('x') as HTMLAnchorElement).href = `https://x.com/intent/post?${new URLSearchParams({ text: shareText, url })}`;
     ($('li') as HTMLAnchorElement).href = `https://www.linkedin.com/sharing/share-offsite/?${new URLSearchParams({ url })}`;
@@ -72,6 +77,16 @@ async function go(a: string, b?: string) {
     status.textContent = errorText(e, who);
   } finally { clearInterval(tick); }
 }
+
+function paint(u = qs().get('u'), m = qs().get('m')) {
+  if (!last || !u) return;
+  out.replaceChildren(last());
+  const q = new URLSearchParams({ u, ...(m && { m }), ...(opts.theme !== 'north' && { t: opts.theme }), ...(opts.hindi && { l: 'hi' }) });
+  history.replaceState(null, '', `?${q}`);
+  document.querySelectorAll<HTMLButtonElement>('[data-theme]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.theme === opts.theme)));
+  $('lang').setAttribute('aria-pressed', String(opts.hindi));
+}
+const qs = () => new URLSearchParams(location.search);
 
 async function toPng(): Promise<Blob | null> {
   const card = document.getElementById('card');
@@ -90,6 +105,10 @@ document.querySelectorAll<HTMLButtonElement>('.chip').forEach((c) => c.addEventL
   if (mode === 'match' && u1.value && !u2.value) u2.value = v; else u1.value = v;
   if (mode === 'single' || (u1.value && u2.value)) form.requestSubmit();
 }));
+document.querySelectorAll<HTMLButtonElement>('button[data-theme]').forEach((b) => b.addEventListener('click', () => {
+  opts.theme = b.dataset.theme as Theme; paint();
+}));
+$('lang').addEventListener('click', () => { opts.hindi = !opts.hindi; paint(); });
 $('pdf').addEventListener('click', () => window.print());
 $('png').addEventListener('click', async () => {
   const blob = await toPng().catch(() => null);
@@ -108,6 +127,6 @@ $('share').addEventListener('click', async () => {
   } catch { /* user closed the share sheet */ }
 });
 
-const qs = new URLSearchParams(location.search), qu = qs.get('u'), qm = qs.get('m');
+const qu = qs0.get('u'), qm = qs0.get('m');
 if (qm !== null) setMode('match');
 if (qu) { u1.value = qu.slice(0, 120); if (qm) u2.value = qm.slice(0, 120); void go(qu, qm ?? undefined); }

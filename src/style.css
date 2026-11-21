@@ -142,6 +142,23 @@ dd { margin: 0; overflow-wrap: anywhere; }
 .site-foot { text-align: center; color: var(--cream); opacity: .75; font-size: 14px; padding: 8px 16px 32px; }
 .site-foot p { margin: 4px 0; }
 
+/* regional card styles */
+.biodata[data-theme="south"] { --maroon: #14532d; --maroon-2: #0b3b20; --gold: #c9a227; --gold-2: #e8c75a; --cream: #fffbea; --marigold: #65a30d; }
+.biodata[data-theme="south"] .toran { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='40'%3E%3Cpath d='M0 3 Q22 13 44 3' stroke='%23c9a227' stroke-width='2' fill='none'/%3E%3Cpath d='M22 8 C29 17 27 31 22 38 C17 31 15 17 22 8Z' fill='%2315803d'/%3E%3Cpath d='M22 10 V36' stroke='%230b3b20' stroke-width='1'/%3E%3Ccircle cx='22' cy='8' r='3.5' fill='%23f59e0b'/%3E%3Ccircle cx='4' cy='6' r='2.5' fill='%23f59e0b'/%3E%3Ccircle cx='40' cy='6' r='2.5' fill='%23f59e0b'/%3E%3C/svg%3E"); height: 42px; }
+.biodata[data-theme="bengali"] { --maroon: #b91c1c; --maroon-2: #7f1d1d; --gold: #d4a017; --gold-2: #f0c54a; --cream: #fffdf8; --marigold: #ef4444; }
+.biodata[data-theme="bengali"] .toran { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='38'%3E%3Cpath d='M0 3 Q22 13 44 3' stroke='%23d4a017' stroke-width='2' fill='none'/%3E%3Cpath d='M22 8 v5' stroke='%23b91c1c' stroke-width='1.5'/%3E%3Ccircle cx='22' cy='22' r='9' fill='%23fff' stroke='%23b91c1c' stroke-width='2'/%3E%3Ccircle cx='22' cy='22' r='4' fill='%23b91c1c'/%3E%3Cpath d='M6 8 l3 5 l-3 5 l-3 -5z' fill='%23b91c1c'/%3E%3Cpath d='M38 8 l3 5 l-3 5 l-3 -5z' fill='%23b91c1c'/%3E%3C/svg%3E"); }
+.biodata[data-theme="punjabi"] { --maroon: #9d174d; --maroon-2: #701a3e; --gold: #f59e0b; --gold-2: #fbbf24; --cream: #fff7ed; --marigold: #f97316; }
+.biodata[data-theme="punjabi"] .toran { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='38'%3E%3Cpath d='M0 3 Q22 13 44 3' stroke='%23f59e0b' stroke-width='2' fill='none'/%3E%3Cpath d='M22 8 v5' stroke='%2315803d' stroke-width='1.5'/%3E%3Cg fill='%23db2777'%3E%3Ccircle cx='22' cy='15' r='4'/%3E%3Ccircle cx='29' cy='22' r='4'/%3E%3Ccircle cx='22' cy='29' r='4'/%3E%3Ccircle cx='15' cy='22' r='4'/%3E%3C/g%3E%3Ccircle cx='22' cy='22' r='4.5' fill='%23f97316'/%3E%3Ccircle cx='22' cy='22' r='2' fill='%23fde047'/%3E%3Ccircle cx='5' cy='9' r='3' fill='%237c3aed'/%3E%3Ccircle cx='39' cy='9' r='3' fill='%2316a34a'/%3E%3C/svg%3E"); }
+.bd-sec h3.is-hi { font-size: 22px; }
+.bd-sec h3.is-hi .hi { font-family: var(--body); font-size: 14px; color: var(--muted); }
+
+/* style picker */
+.customize { flex-basis: 100%; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; margin-bottom: 6px; }
+.seg { display: inline-flex; flex-wrap: wrap; justify-content: center; gap: 4px; padding: 4px; border: 1.5px solid var(--gold); border-radius: 14px; background: rgba(255, 248, 236, .1); }
+.actions .seg button { border: 0; background: transparent; color: var(--cream); padding: 6px 12px; border-radius: 10px; }
+.actions .seg button[aria-pressed="true"], .actions .lang[aria-pressed="true"] { background: var(--gold-2); color: var(--maroon-2); }
+.actions .seg button:hover { background: rgba(255, 248, 236, .18); }
+
 @media (max-width: 600px) {
   .biodata { padding: 0 22px 8px; }
   .toran { margin: 0 -22px; }
