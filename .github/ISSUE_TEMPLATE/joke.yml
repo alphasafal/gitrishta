@@ -1,0 +1,19 @@
+name: 💍 Suggest a joke
+description: Got a better line for the biodata? Pandit ji is listening.
+labels: [joke, good first issue]
+body:
+  - type: dropdown
+    id: field
+    attributes:
+      label: Which field?
+      options: [Rashi, Manglik, Diet, Education, Occupation, Pitaji / Mataji, Family values, Hobbies, Seeking, Something new]
+    validations:
+      required: true
+  - type: textarea
+    id: joke
+    attributes:
+      label: The line
+      description: Keep it kind. We roast code habits, never people.
+      placeholder: 'Manglik: Haan ji, has console.log in production'
+    validations:
+      required: true
