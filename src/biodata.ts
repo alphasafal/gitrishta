@@ -142,8 +142,8 @@ export function buildBiodata(p: Profile): Biodata {
       ] },
       { title: 'Hobbies & Habits', hindi: 'शौक़', rows: [
         ['Shauk', hobbies.slice(0, 3).join('; ')],
-        ['Drinks', 'Only chai and coffee'],
-        ['Smokes', 'Only smoke tests'],
+        ['Drinks', pick(r, J.DRINKS)],
+        ['Smokes', pick(r, J.SMOKES)],
       ] },
     ],
   };
