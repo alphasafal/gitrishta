@@ -92,7 +92,7 @@ function paint(u = qs().get('u'), m = qs().get('m')) {
   out.replaceChildren(last());
   const q = new URLSearchParams({ u, ...(m && { m }), ...(opts.theme !== 'north' && { t: opts.theme }), ...(opts.hindi && { l: 'hi' }) });
   history.replaceState(null, '', `?${q}`);
-  document.querySelectorAll<HTMLButtonElement>('[data-theme]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.theme === opts.theme)));
+  document.querySelectorAll<HTMLButtonElement>('button[data-theme]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.theme === opts.theme)));
   $('lang').setAttribute('aria-pressed', String(opts.hindi));
   const url = shareUrl();
   ($('x') as HTMLAnchorElement).href = `https://x.com/intent/post?${new URLSearchParams({ text: shareText, url })}`;
