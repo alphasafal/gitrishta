@@ -12,11 +12,13 @@ Thanks for helping Pandit ji! 🙏
 
 ```bash
 npm ci
-npm run dev
-npm test && npm run build
+npm run dev            # the app (the /s/ and /api/og routes need `npx vercel dev`)
+npm test               # unit and security tests
+npx playwright test    # browser and accessibility tests
+npm run build
 ```
 
-- Never use `innerHTML` or similar. Build elements with `h()` from `src/dom.ts`, which treats every string as text.
+- Never use `innerHTML` or similar (Trusted Types will block it anyway). Build elements with `h()` from `src/dom.ts`, which treats every string as text.
 - Anything from the GitHub API is untrusted. Normalise it in `src/github.ts`.
 - Avoid new runtime dependencies. If you really need one, explain why in the PR.
 - Use [Conventional Commits](https://www.conventionalcommits.org/) for commit messages, e.g. `feat: add a new manglik line`, `fix: rashi boundary on 20 Jan`.
@@ -25,4 +27,5 @@ npm test && npm run build
 
 - Protect `main`: require PRs, the `CI / check` and `CodeQL` checks, and review from code owners.
 - Enable Dependabot alerts, secret scanning with push protection, and private vulnerability reporting.
-- Settings → Pages → Source: **GitHub Actions**.
+- Hosting is Vercel, linked to this repo: `main` deploys to production and every PR gets a preview URL.
+- Optional Vercel environment variables are listed in `.env.example`.
