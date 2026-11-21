@@ -116,11 +116,21 @@ dd { margin: 0; overflow-wrap: anywhere; }
 
 @page { size: A4; margin: 8mm; }
 @media print {
-  body { background: #fff; font-size: 12.5px; }
+  body { background: #fff; font-size: 11.5px; line-height: 1.35; min-height: 0; }
+  .biodata { break-inside: avoid; }
+  .biodata { padding: 0 28px 4px; }
+  .toran { margin: 0 -28px; height: 30px; background-size: 36px 31px; }
+  .bd-top { margin: 8px 0 2px; }
+  .avatar { width: 84px; height: 84px; }
+  .gunas-num { font-size: 40px; }
+  .bd-bio { padding: 4px 12px; margin-top: 6px; }
+  .bd-sec h3 { font-size: 17px; margin-bottom: 3px; }
+  dl { gap: 1px 12px; }
+  .bd-foot { margin: 8px 0 2px; }
   .hero, .status, .actions, .site-foot { display: none !important; }
   main { padding: 0; max-width: none; }
   .biodata { box-shadow: 0 0 0 4px var(--maroon), 0 0 0 6px var(--gold); margin: 6px; max-width: none; animation: none; }
-  .bd-sec { margin-top: 10px; }
-  .bd-title { font-size: 38px; }
+  .bd-sec { margin-top: 8px; }
+  .bd-title { font-size: 32px; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
