@@ -149,31 +149,61 @@ export function buildBiodata(p: Profile): Biodata {
   };
 }
 
-export interface Match { score: number; verdict: string; parts: Row[] }
+export interface Koota { icon: string; name: string; sub: string; score: number; max: number; note: string }
+export interface Side { lang: string; hour: string; rashi: string }
+export type Band = 'great' | 'ok' | 'bad';
+export interface Match {
+  score: number; band: Band; title: string; verdict: string; advice: string;
+  kootas: Koota[]; common: string[]; sides: [Side, Side];
+}
 
-/** Kundli Milan between two developers: 36 gunas, fully deterministic. */
+const side = (p: Profile, s: ReturnType<typeof stats>): Side => ({
+  lang: s.langs[0] ?? 'Markdown', hour: s.peak === null ? 'secret hours' : hourLabel(s.peak),
+  rashi: rashi(p.user.created)[0].split(' ')[0]!,
+});
+
+/** Kundli Milan between two developers: 36 gunas, fully deterministic and symmetric. */
 export function matchKundli(a: Profile, b: Profile): Match {
   const sa = stats(a), sb = stats(b);
   const la = new Set(sa.langs.slice(0, 5)), common = sb.langs.slice(0, 5).filter((l) => la.has(l));
   const lang = Math.round(12 * common.length / Math.max(1, Math.min(la.size, sb.langs.slice(0, 5).length)));
-  const dh = sa.peak === null || sb.peak === null ? 12 : Math.min(Math.abs(sa.peak - sb.peak), 24 - Math.abs(sa.peak - sb.peak));
+  const secret = sa.peak === null || sb.peak === null;
+  const dh = secret ? 12 : Math.min(Math.abs(sa.peak! - sb.peak!), 24 - Math.abs(sa.peak! - sb.peak!));
   const time = Math.round(8 * (1 - dh / 12));
   const lic = sa.license && sa.license === sb.license ? 6 : sa.license && sb.license ? 3 : 1;
   const ratio = (x: number, y: number) => (x + y ? Math.min(x, y) / Math.max(x, y) : 1);
   const act = Math.round(5 * ratio(a.pushes.length, b.pushes.length));
   const fame = Math.round(5 * ratio(Math.log1p(sa.stars), Math.log1p(sb.stars)));
   const score = Math.max(4, Math.min(36, lang + time + lic + act + fame));
+  const band: Band = score >= 28 ? 'great' : score >= 18 ? 'ok' : 'bad';
+  const r = rng([a.user.login, b.user.login].map((x) => x.toLowerCase()).sort().join('+'));
+
+  const common2 = common.map((l) => `Both speak ${l}`);
+  if (sa.peak !== null && sb.peak !== null && sa.peak < 5 && sb.peak < 5) common2.push('Both are night owls 🦉');
+  if (lic === 6) common2.push(`Both ${sa.license} family`);
+  if (sa.weekend > 0.3 && sb.weekend > 0.3) common2.push('Both code on weekends');
+
   return {
-    score,
-    verdict: score >= 28 ? 'Uttam milan! Shaadi pakki, monorepo bhi.'
-      : score >= 18 ? 'Chalega. Some merge conflicts expected, but love will resolve them.'
+    score, band,
+    title: band === 'great' ? 'Uttam Milan' : band === 'ok' ? 'Madhyam Milan' : 'Adhura Milan',
+    verdict: band === 'great' ? 'Shaadi pakki, monorepo bhi.'
+      : band === 'ok' ? 'Chalega. Some merge conflicts expected, but love will resolve them.'
         : 'Not compatible. One uses tabs, the other uses spaces.',
-    parts: [
-      ['Bhasha milan (languages)', `${lang}/12${common.length ? `: both speak ${common.join(', ')}` : ': no common language, will need a translator'}`],
-      ['Samay milan (commit hours)', `${time}/8${sa.peak === null || sb.peak === null ? ': someone commits in secret' : dh === 12 ? ': opposite schedules, perfect for 24/7 on-call' : `: commit ${dh}h apart`}`],
-      ['Sanskaar (license)', `${lic}/6${lic === 6 ? `: both ${sa.license}` : ': different family values'}`],
-      ['Mehnat (activity)', `${act}/5`],
-      ['Shohrat (stars)', `${fame}/5`],
+    advice: pick(r, J.ADVICE[band]),
+    common: common2.length ? common2 : ['Opposites attract, like frontend and backend'],
+    sides: [side(a, sa), side(b, sb)],
+    kootas: [
+      { icon: '🗣️', name: 'Bhasha Koota', sub: 'Shared languages', score: lang, max: 12,
+        note: common.length ? `Both write ${common.join(', ')}` : 'No common language, will need a translator' },
+      { icon: '🕰️', name: 'Samay Koota', sub: 'Commit hours (IST)', score: time, max: 8,
+        note: secret ? 'Someone commits in secret' : dh === 0 ? 'Commit at the same hour, very romantic'
+          : dh === 12 ? 'Opposite schedules, perfect for 24/7 on-call' : `Peak commits ${dh}h apart` },
+      { icon: '📜', name: 'Sanskaar Koota', sub: 'License values', score: lic, max: 6,
+        note: lic === 6 ? `Both choose ${sa.license}` : lic === 3 ? `${sa.license} meets ${sb.license}` : 'Someone ships without a license' },
+      { icon: '🔥', name: 'Mehnat Koota', sub: 'Recent activity', score: act, max: 5,
+        note: `${fmt(a.pushes.length)} vs ${fmt(b.pushes.length)} recent pushes` },
+      { icon: '⭐', name: 'Shohrat Koota', sub: 'Stars earned', score: fame, max: 5,
+        note: `${fmt(sa.stars)} vs ${fmt(sb.stars)} stars` },
     ],
   };
 }
