@@ -48,6 +48,7 @@ describe('matchKundli', () => {
       expect(m.score).toBeGreaterThanOrEqual(4);
       expect(m.score).toBeLessThanOrEqual(36);
     }
+    expect(matchKundli(a, a).score).toBe(36);
     expect(matchKundli(a, b).score).toBe(matchKundli(b, a).score);
   });
 });
