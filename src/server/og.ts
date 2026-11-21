@@ -34,9 +34,15 @@ export async function fetchAvatar(raw: string | null): Promise<string | null> {
   try {
     const u = new URL(url);
     u.searchParams.set('s', '260');
-    const r = await fetch(u, { redirect: 'error', signal: AbortSignal.timeout(5_000) });
+    const r = await fetch(u, {
+      redirect: 'error', signal: AbortSignal.timeout(5_000),
+      headers: { 'User-Agent': 'gitrishta', Accept: 'image/png,image/jpeg' },
+    });
     const type = (r.headers.get('content-type') ?? '').split(';')[0]!.trim();
-    if (!r.ok || !/^image\/(png|jpeg)$/.test(type)) return null;
+    if (!r.ok || !/^image\/(png|jpeg)$/.test(type)) {
+      console.warn('avatar fetch refused', r.status, type); // no user data, just why
+      return null;
+    }
     if (Number(r.headers.get('content-length') ?? 0) > MAX_AVATAR) return null;
     const buf = await r.arrayBuffer();
     if (buf.byteLength > MAX_AVATAR) return null;
@@ -44,7 +50,10 @@ export async function fetchAvatar(raw: string | null): Promise<string | null> {
     const bytes = new Uint8Array(buf);
     for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
     return `data:${type};base64,${btoa(bin)}`;
-  } catch { return null; }
+  } catch (e) {
+    console.warn('avatar fetch failed', e instanceof Error ? e.name : 'error');
+    return null;
+  }
 }
 
 // --- SVG pieces. `t()` is the only way text gets in, and it always escapes.
