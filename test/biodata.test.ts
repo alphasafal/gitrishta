@@ -14,7 +14,7 @@ describe('buildBiodata', () => {
     expect(row(b, 'Gotra')).toBe('TypeScript');
     expect(row(b, 'Package')).toMatch(/^123 ⭐/);
     expect(row(b, 'Bhai-behen')).toMatch(/^1 forked repo /);
-    expect(row(b, 'Khandaani jaaydaad')).toBe('dotfiles, est. 2015');
+    expect(row(b, 'Jaaydaad')).toBe('dotfiles, est. 2015');
     expect(row(b, 'Nakshatra')).toMatch(/Ullu.*2 AM/);
     expect(row(b, 'Occupation')).toBe('Works at github');
     expect(row(b, 'Rashi')).toMatch(/^Meen/); // 12 March

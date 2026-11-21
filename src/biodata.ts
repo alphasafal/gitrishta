@@ -136,7 +136,7 @@ export function buildBiodata(p: Profile): Biodata {
         ['Mataji', pick(r, J.MOTHER)],
         ['Bhai-behen', s.forks ? `${plural(s.forks, 'forked repo')} (cousins, technically)` : 'Only child, no forks'],
         ['Family', fam],
-        ['Khandaani jaaydaad', s.oldest ? `${s.oldest.name}, est. ${s.oldest.created.getUTCFullYear()}` : 'Will inherit future repos'],
+        ['Jaaydaad', s.oldest ? `${s.oldest.name}, est. ${s.oldest.created.getUTCFullYear()}` : 'Will inherit future repos'],
         ['Family values', s.license ? J.LICENSE[s.license] ?? `${s.license}: unique family traditions` : J.LICENSE_NONE],
         ...(s.archived ? [['Late relatives', `${plural(s.archived, 'archived repo')}, may they rest in peace`] as Row] : []),
       ] },

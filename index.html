@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self' data:; img-src 'self' data: blob: https://avatars.githubusercontent.com; connect-src 'self' https://api.github.com https://avatars.githubusercontent.com; manifest-src 'self'; base-uri 'self'; form-action 'none'; object-src 'none'; require-trusted-types-for 'script'; trusted-types 'none'" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>GitRishta · Your GitHub, as a shaadi biodata</title>
+    <meta name="description" content="Turn any GitHub profile into a proper Indian matrimonial biodata. Gotra: JavaScript. Manglik: uses tabs. Print it, share it, match kundlis with another dev." />
+    <meta name="theme-color" content="#7a1f2b" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="GitRishta · Your GitHub, as a shaadi biodata" />
+    <meta property="og:description" content="Gotra: JavaScript. Manglik: uses tabs over spaces. Seeking: someone who reviews PRs on time." />
+    <meta property="og:image" content="https://alphasafal.github.io/gitrishta/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <main>
+      <header class="hero">
+        <p class="hero-kicker">॥ शुभ विवाह ॥</p>
+        <h1>Git<span>Rishta</span></h1>
+        <p class="hero-sub">Your GitHub profile, as a proper shaadi biodata. Gotra, rashi, manglik status, all from your commits.</p>
+        <form id="form" class="search" novalidate>
+          <div class="tabs" role="tablist">
+            <button type="button" class="tab active" data-mode="single" role="tab" aria-selected="true">Biodata</button>
+            <button type="button" class="tab" data-mode="match" role="tab" aria-selected="false">Kundli Milan 💞</button>
+          </div>
+          <div class="fields">
+            <label class="field"><span>github.com/</span><input id="u1" name="u1" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="120" placeholder="username" required /></label>
+            <label class="field match-only"><span>github.com/</span><input id="u2" name="u2" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="120" placeholder="their username" /></label>
+            <button class="go" type="submit">Banao Biodata</button>
+          </div>
+          <p class="try">Try: <button type="button" class="chip" data-u="torvalds">torvalds</button><button type="button" class="chip" data-u="gaearon">gaearon</button><button type="button" class="chip" data-u="sindresorhus">sindresorhus</button><button type="button" class="chip" data-u="alphasafal">alphasafal</button></p>
+        </form>
+      </header>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+      <div id="out" class="out"></div>
+      <div id="actions" class="actions" hidden>
+        <button type="button" id="pdf">📄 Print / Save PDF</button>
+        <button type="button" id="png">🖼️ Download image</button>
+        <button type="button" id="share">📣 Share</button>
+        <a id="x" target="_blank" rel="noopener noreferrer">Post on X</a>
+        <a id="li" target="_blank" rel="noopener noreferrer">Post on LinkedIn</a>
+      </div>
+    </main>
+    <footer class="site-foot">
+      <p>Built from public GitHub data, right in your browser. Nothing is stored. All gunas are fictional, all bugs are real.</p>
+      <p><a href="https://github.com/alphasafal/gitrishta" target="_blank" rel="noopener noreferrer">Source on GitHub</a> · Add a joke, open a PR 🙏</p>
+    </footer>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
