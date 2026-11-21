@@ -1,14 +1,17 @@
 // @vitest-environment node
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createRequire } from 'node:module';
-import type { Font } from '../src/server/og';
+import { initWasm } from '@resvg/resvg-wasm';
+import { biodataSvg, fetchAvatar, handleOg, kundliSvg } from '../src/server/og';
+import { buildBiodata } from '../src/biodata';
+import { profile } from './fixtures';
 import { esc, handleShare, siteOrigin } from '../src/server/share';
 import { rawEvents, rawRepos, rawUser } from './fixtures';
 
-const font = (f: string, name: string, weight: 400 | 600): Font =>
-  ({ name, weight, style: 'normal', data: new Uint8Array(readFileSync(`assets/fonts/${f}`)).buffer });
-const fonts = async () => [font('yatra-one-latin-400-normal.woff', 'Yatra One', 400), font('mukta-latin-400-normal.woff', 'Mukta', 400), font('mukta-latin-600-normal.woff', 'Mukta', 600)];
+const fonts = async () => ['yatra-one-latin-400-normal', 'mukta-latin-400-normal', 'mukta-latin-600-normal']
+  .map((f) => new Uint8Array(readFileSync(`assets/fonts/${f}.ttf`)));
+let wasm: Promise<void> | undefined;
+const ready = () => (wasm ??= initWasm(readFileSync('node_modules/@resvg/resvg-wasm/index_bg.wasm')));
 const PNG = new Uint8Array(readFileSync("test/avatar.png"));
 const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { 'content-type': 'application/json' } });
 const req = (path: string) => new Request(`https://gitrishta.vercel.app${path}`);
@@ -27,12 +30,6 @@ function github(login: string, extra: (url: string, init?: RequestInit) => Respo
     return json({ message: 'Not Found' }, 404);
   });
 }
-
-// @vercel/og's Node build calls require(); Vercel runs it on the Edge build instead.
-const g = globalThis as { require?: unknown; __dirname?: string };
-g.require ??= createRequire(import.meta.url);
-g.__dirname ??= `${process.cwd()}/node_modules/@vercel/og/dist`;
-const { fetchAvatar, handleOg } = await import('../src/server/og');
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -76,7 +73,7 @@ describe('/api/og preview image', () => {
     const f = vi.fn();
     vi.stubGlobal('fetch', f);
     for (const p of ['/api/og', '/api/og?u=../../repos/a/b', '/api/og?u=a&m=%3Cx%3E', '/api/og?u=a%2F..']) {
-      const r = await handleOg(req(p), { fonts });
+      const r = await handleOg(req(p), { fonts, ready });
       expect(r.status).toBe(400);
     }
     expect(f).not.toHaveBeenCalled();
@@ -87,7 +84,7 @@ describe('/api/og preview image', () => {
     const f = github(a, (url) => (url.endsWith(`/users/${b}`) ? json(rawUser({ login: b })) : undefined));
     vi.stubGlobal('fetch', f);
     for (const p of [`/api/og?u=${a}`, `/api/og?u=${a}&m=${b}`]) {
-      const r = await handleOg(req(p), { fonts });
+      const r = await handleOg(req(p), { fonts, ready });
       const body = new Uint8Array(await r.arrayBuffer());
       expect(r.headers.get('content-type')).toBe('image/png');
       expect(r.headers.get('cache-control')).toContain('s-maxage=86400');
@@ -100,7 +97,7 @@ describe('/api/og preview image', () => {
     const a = uniq();
     const f = github(a);
     vi.stubGlobal('fetch', f);
-    await (await handleOg(req(`/api/og?u=${a}`), { fonts, token: 'test-token' })).arrayBuffer();
+    await (await handleOg(req(`/api/og?u=${a}`), { fonts, ready, token: 'test-token' })).arrayBuffer();
     for (const [url, init] of f.mock.calls as unknown as [string, RequestInit | undefined][]) {
       const auth = new Headers(init?.headers).get('authorization');
       expect(auth).toBe(new URL(String(url)).hostname === 'api.github.com' ? 'Bearer test-token' : null);
@@ -109,11 +106,29 @@ describe('/api/og preview image', () => {
 
   it('falls back to a short-cached brand image when GitHub fails', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => json({}, 500)));
-    const r = await handleOg(req(`/api/og?u=${uniq()}`), { fonts });
+    const r = await handleOg(req(`/api/og?u=${uniq()}`), { fonts, ready });
     expect(r.headers.get('content-type')).toBe('image/png');
     expect((await r.arrayBuffer()).byteLength).toBeGreaterThan(1000);
     expect(r.headers.get('cache-control')).toContain('s-maxage=600');
   }, 30_000);
+});
+
+describe('preview SVG', () => {
+  const evil = '"/></text><image href="https://evil.example/x.png"/><text>&amp;<script>';
+  it('escapes hostile names, verdicts and fields', () => {
+    const p = profile({ name: evil, login: 'octo' }, [{ name: 'r', language: evil, stargazers_count: 1, created_at: '2020-01-01T00:00:00Z' }]);
+    const b = buildBiodata(p);
+    for (const svg of [biodataSvg(b, null), kundliSvg(b, b, [null, null], 30, evil, evil, 'great')]) {
+      expect(svg).not.toContain('<image href="https://evil');
+      expect(svg).not.toContain('<script');
+      expect(svg.match(/<text\b/g)?.length).toBe(svg.match(/<\/text>/g)?.length);
+    }
+  });
+  it('only embeds avatars that were passed in as data URLs', () => {
+    const b = buildBiodata(profile());
+    expect(biodataSvg(b, null)).not.toContain('<image');
+    expect(biodataSvg(b, 'data:image/png;base64,AAAA')).toContain('<image href="data:image/png;base64,AAAA"');
+  });
 });
 
 describe('fetchAvatar', () => {

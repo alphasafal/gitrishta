@@ -1,1 +1,1 @@
-Latin subsets of [Yatra One](https://fonts.google.com/specimen/Yatra+One) and [Mukta](https://fonts.google.com/specimen/Mukta), copied from `@fontsource` for the social preview images. Both are licensed under the [SIL Open Font License 1.1](https://openfontlicense.org).
+Latin subsets of [Yatra One](https://fonts.google.com/specimen/Yatra+One) and [Mukta](https://fonts.google.com/specimen/Mukta), converted from the `@fontsource` woff files to TTF for the social preview images. Both are licensed under the [SIL Open Font License 1.1](https://openfontlicense.org).
