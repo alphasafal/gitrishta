@@ -155,7 +155,7 @@ export interface Match { score: number; verdict: string; parts: Row[] }
 export function matchKundli(a: Profile, b: Profile): Match {
   const sa = stats(a), sb = stats(b);
   const la = new Set(sa.langs.slice(0, 5)), common = sb.langs.slice(0, 5).filter((l) => la.has(l));
-  const lang = Math.min(12, common.length * 4 + (common.length ? 2 : 0));
+  const lang = Math.round(12 * common.length / Math.max(1, Math.min(la.size, sb.langs.slice(0, 5).length)));
   const dh = sa.peak === null || sb.peak === null ? 12 : Math.min(Math.abs(sa.peak - sb.peak), 24 - Math.abs(sa.peak - sb.peak));
   const time = Math.round(8 * (1 - dh / 12));
   const lic = sa.license && sa.license === sb.license ? 6 : sa.license && sb.license ? 3 : 1;
@@ -170,7 +170,7 @@ export function matchKundli(a: Profile, b: Profile): Match {
         : 'Not compatible. One uses tabs, the other uses spaces.',
     parts: [
       ['Bhasha milan (languages)', `${lang}/12${common.length ? `: both speak ${common.join(', ')}` : ': no common language, will need a translator'}`],
-      ['Samay milan (commit hours)', `${time}/8${dh === 12 ? ': opposite schedules, perfect for 24/7 on-call' : `: commit ${dh}h apart`}`],
+      ['Samay milan (commit hours)', `${time}/8${sa.peak === null || sb.peak === null ? ': someone commits in secret' : dh === 12 ? ': opposite schedules, perfect for 24/7 on-call' : `: commit ${dh}h apart`}`],
       ['Sanskaar (license)', `${lic}/6${lic === 6 ? `: both ${sa.license}` : ': different family values'}`],
       ['Mehnat (activity)', `${act}/5`],
       ['Shohrat (stars)', `${fame}/5`],
