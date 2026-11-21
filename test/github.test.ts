@@ -68,6 +68,7 @@ describe('fetchProfile', () => {
     for (const [url, init] of f.mock.calls as unknown as [string, RequestInit][]) {
       expect(new URL(url).origin).toBe('https://api.github.com');
       expect(init.credentials).toBe('omit');
+      expect(new Headers(init.headers).has('authorization')).toBe(false); // the browser never sends a token
     }
   });
 
@@ -86,5 +87,16 @@ describe('fetchProfile', () => {
     const p = await fetchProfile('partial-user');
     expect(p.repos).toEqual([]);
     expect(p.pushes).toEqual([]);
+  });
+
+  it('keeps the profile cache bounded', async () => {
+    const f = vi.fn(async (url: string) => json(url.endsWith('/repos?per_page=100&sort=pushed&type=owner') || url.includes('/events/') ? [] : rawUser({ login: url.split('/users/')[1]!.split('/')[0] })));
+    vi.stubGlobal('fetch', f);
+    for (let i = 0; i < 80; i++) await fetchProfile(`bounded-${i}`);
+    f.mockClear();
+    await fetchProfile('bounded-79'); // recent: still cached
+    expect(f).not.toHaveBeenCalled();
+    await fetchProfile('bounded-0'); // oldest: evicted
+    expect(f).toHaveBeenCalled();
   });
 });
