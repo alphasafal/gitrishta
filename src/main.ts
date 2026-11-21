@@ -7,6 +7,7 @@ import { installPolicy } from './policy';
 import { buildBiodata, matchKundli } from './biodata';
 import { fetchProfile, GhError, parseUsername } from './github';
 import { renderBiodata, renderMatch, THEMES, type Opts, type Theme } from './render';
+import { badgeMarkdown, biodataText, matchText } from './share';
 
 installPolicy();
 // Cookie-free page counts on Vercel only. The query string (which holds usernames) is dropped.
@@ -20,6 +21,7 @@ const out = $('out'), status = $('status'), actions = $('actions');
 const site = (location.host + location.pathname).replace(/\/(index\.html)?$/, '') || 'gitrishta';
 let mode: 'single' | 'match' = 'single', run = 0, shareText = '';
 let last: (() => HTMLElement) | null = null;
+let current: { login: string; text: (url: string) => string; badge?: (url: string) => string } | null = null;
 const qs0 = new URLSearchParams(location.search);
 const opts: Opts = {
   site, hindi: qs0.get('l') === 'hi',
@@ -58,7 +60,7 @@ async function go(a: string, b?: string) {
   let i = 0;
   status.textContent = LOADING[0]!;
   const tick = setInterval(() => { status.textContent = LOADING[++i % LOADING.length]!; }, 1400);
-  out.replaceChildren(); actions.hidden = true; last = null;
+  out.replaceChildren(); actions.hidden = true; last = null; current = null;
   try {
     const pa = await fetchProfile(la).catch((e) => { throw [e, la]; });
     const pb = lb ? await fetchProfile(lb).catch((e) => { throw [e, lb]; }) : null;
@@ -67,9 +69,11 @@ async function go(a: string, b?: string) {
     if (pb) {
       const bb = buildBiodata(pb), m = matchKundli(pa, pb);
       last = () => renderMatch(ba, bb, m, opts);
+      current = { login: ba.login, text: (url) => matchText(ba, bb, m, url) };
       shareText = `@${ba.login} × @${bb.login}: ${m.score}/36 gunas matched on GitRishta. ${m.verdict}`;
     } else {
       last = () => renderBiodata(ba, opts);
+      current = { login: ba.login, text: (url) => biodataText(ba, url), badge: (url) => badgeMarkdown(ba, url) };
       shareText = `My GitHub shaadi biodata: ${ba.gunas}/36 gunas. ${ba.sections[0]!.rows.find((r) => r[0] === 'Manglik')![1]}. Make yours:`;
     }
     status.textContent = '';
@@ -93,6 +97,13 @@ function paint(u = qs().get('u'), m = qs().get('m')) {
   const url = shareUrl();
   ($('x') as HTMLAnchorElement).href = `https://x.com/intent/post?${new URLSearchParams({ text: shareText, url })}`;
   ($('li') as HTMLAnchorElement).href = `https://www.linkedin.com/sharing/share-offsite/?${new URLSearchParams({ url })}`;
+  if (current) ($('wa') as HTMLAnchorElement).href = `https://wa.me/?text=${encodeURIComponent(current.text(url))}`;
+  $('badge').hidden = $('friend').hidden = !current?.badge;
+}
+
+async function copy(text: string, done: string) {
+  try { await navigator.clipboard.writeText(text); status.textContent = done; }
+  catch { status.textContent = 'Could not copy. Your browser blocked clipboard access.'; }
 }
 const qs = () => new URLSearchParams(location.search);
 
@@ -125,6 +136,14 @@ document.querySelectorAll<HTMLButtonElement>('button[data-theme]').forEach((b) =
   opts.theme = b.dataset.theme as Theme; paint();
 }));
 $('lang').addEventListener('click', () => { opts.hindi = !opts.hindi; paint(); });
+$('copy').addEventListener('click', () => current && copy(current.text(shareUrl()), 'Copied. Ab family group mein paste karo 🙏'));
+$('badge').addEventListener('click', () => current?.badge && copy(current.badge(shareUrl()), 'Badge copied. Paste it into your GitHub profile README.'));
+$('friend').addEventListener('click', () => {
+  if (!current) return;
+  setMode('match'); u1.value = current.login; u2.value = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' }); u2.focus({ preventScroll: true });
+  status.textContent = 'Now enter your friend\'s GitHub username 💞';
+});
 $('pdf').addEventListener('click', () => window.print());
 $('png').addEventListener('click', async () => {
   const blob = await toPng().catch(() => null);
