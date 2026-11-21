@@ -69,15 +69,18 @@ export const normRepos = (j: unknown): Repo[] => (Array.isArray(j) ? j : []).sli
 export const normPushes = (j: unknown): Date[] => (Array.isArray(j) ? j : [])
   .filter((e: any) => e?.type === 'PushEvent').map((e: any) => date(e?.created_at)).slice(0, 100);
 
-async function get(path: string, optional = false): Promise<unknown> {
+const inBrowser = typeof document !== 'undefined';
+
+async function get(path: string, optional: boolean, token?: string): Promise<unknown> {
   let r: Response;
   try {
     r = await fetch(API + path, {
-      headers: { Accept: 'application/vnd.github+json' },
-      credentials: 'omit', referrerPolicy: 'no-referrer', signal: AbortSignal.timeout(10_000),
+      headers: { Accept: 'application/vnd.github+json', ...(token && { Authorization: `Bearer ${token}` }), ...(!inBrowser && { 'User-Agent': 'gitrishta' }) },
+      ...(inBrowser && { credentials: 'omit' as const, referrerPolicy: 'no-referrer' as const }),
+      signal: AbortSignal.timeout(8_000),
     });
   } catch { if (optional) return []; throw new GhError('network'); }
-  if (r.ok) return r.json();
+  if (r.ok) return r.json().catch(() => { throw new GhError('network'); });
   if (optional) return [];
   if (r.status === 404) throw new GhError('notfound');
   if ((r.status === 403 || r.status === 429) && r.headers.get('x-ratelimit-remaining') === '0') {
@@ -86,20 +89,24 @@ async function get(path: string, optional = false): Promise<unknown> {
   throw new GhError('network');
 }
 
+// Bounded, because on the server one instance serves many visitors.
 const cache = new Map<string, Promise<Profile>>();
+const CACHE_MAX = 64;
 
-export function fetchProfile(input: string): Promise<Profile> {
+/** `token` is only ever passed on the server; the browser never has one. */
+export function fetchProfile(input: string, token?: string): Promise<Profile> {
   const login = parseUsername(input);
   if (!login) return Promise.reject(new GhError('invalid'));
   const key = login.toLowerCase();
   if (!cache.has(key)) {
     const u = encodeURIComponent(login);
     const p = Promise.all([
-      get(`/users/${u}`),
-      get(`/users/${u}/repos?per_page=100&sort=pushed&type=owner`, true),
-      get(`/users/${u}/events/public?per_page=100`, true),
+      get(`/users/${u}`, false, token),
+      get(`/users/${u}/repos?per_page=100&sort=pushed&type=owner`, true, token),
+      get(`/users/${u}/events/public?per_page=100`, true, token),
     ]).then(([user, repos, events]) => ({ user: normUser(user), repos: normRepos(repos), pushes: normPushes(events) }));
     p.catch(() => cache.delete(key));
+    if (cache.size >= CACHE_MAX) cache.delete(cache.keys().next().value!);
     cache.set(key, p);
   }
   return cache.get(key)!;
