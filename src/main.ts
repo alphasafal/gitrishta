@@ -2,9 +2,17 @@ import '@fontsource/yatra-one/400.css';
 import '@fontsource/mukta/400.css';
 import '@fontsource/mukta/600.css';
 import './style.css';
+import { inject } from '@vercel/analytics';
+import { installPolicy } from './policy';
 import { buildBiodata, matchKundli } from './biodata';
 import { fetchProfile, GhError, parseUsername } from './github';
 import { renderBiodata, renderMatch, THEMES, type Opts, type Theme } from './render';
+
+installPolicy();
+// Cookie-free page counts on Vercel only. The query string (which holds usernames) is dropped.
+if (import.meta.env.PROD && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
+  inject({ mode: 'production', beforeSend: (ev) => ({ ...ev, url: ev.url.split('?')[0]! }) });
+}
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const form = $('form') as HTMLFormElement, u1 = $<HTMLInputElement>('u1'), u2 = $<HTMLInputElement>('u2');
@@ -66,9 +74,6 @@ async function go(a: string, b?: string) {
     }
     status.textContent = '';
     paint(pa.user.login, pb?.user.login);
-    const url = location.href;
-    ($('x') as HTMLAnchorElement).href = `https://x.com/intent/post?${new URLSearchParams({ text: shareText, url })}`;
-    ($('li') as HTMLAnchorElement).href = `https://www.linkedin.com/sharing/share-offsite/?${new URLSearchParams({ url })}`;
     actions.hidden = false;
     out.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (err) {
@@ -85,8 +90,19 @@ function paint(u = qs().get('u'), m = qs().get('m')) {
   history.replaceState(null, '', `?${q}`);
   document.querySelectorAll<HTMLButtonElement>('[data-theme]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.theme === opts.theme)));
   $('lang').setAttribute('aria-pressed', String(opts.hindi));
+  const url = shareUrl();
+  ($('x') as HTMLAnchorElement).href = `https://x.com/intent/post?${new URLSearchParams({ text: shareText, url })}`;
+  ($('li') as HTMLAnchorElement).href = `https://www.linkedin.com/sharing/share-offsite/?${new URLSearchParams({ url })}`;
 }
 const qs = () => new URLSearchParams(location.search);
+
+/** /s/<user>[/<match>] gets a per-user link preview on Vercel. */
+function shareUrl(): string {
+  const q = qs(), u = q.get('u'), m = q.get('m');
+  if (!u) return location.href;
+  const rest = new URLSearchParams({ ...(q.get('t') && { t: q.get('t')! }), ...(q.get('l') && { l: q.get('l')! }) }).toString();
+  return `${location.origin}/s/${encodeURIComponent(u)}${m ? `/${encodeURIComponent(m)}` : ''}${rest ? `?${rest}` : ''}`;
+}
 
 async function toPng(): Promise<Blob | null> {
   const card = document.getElementById('card');
@@ -120,10 +136,10 @@ $('png').addEventListener('click', async () => {
 $('share').addEventListener('click', async () => {
   const blob = await toPng().catch(() => null);
   const file = blob && new File([blob], fileName(), { type: 'image/png' });
-  const data: ShareData = { title: 'GitRishta', text: shareText, url: location.href, ...(file && { files: [file] }) };
+  const data: ShareData = { title: 'GitRishta', text: shareText, url: shareUrl(), ...(file && { files: [file] }) };
   try {
     if (navigator.canShare?.(data)) await navigator.share(data);
-    else { await navigator.clipboard.writeText(`${shareText} ${location.href}`); status.textContent = 'Link copied. Ab family group mein bhejo.'; }
+    else { await navigator.clipboard.writeText(`${shareText} ${shareUrl()}`); status.textContent = 'Link copied. Ab family group mein bhejo.'; }
   } catch { /* user closed the share sheet */ }
 });
 
