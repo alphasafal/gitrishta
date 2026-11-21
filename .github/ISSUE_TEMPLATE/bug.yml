@@ -6,7 +6,7 @@ body:
     id: url
     attributes:
       label: Link that shows the bug
-      placeholder: https://alphasafal.github.io/gitrishta/?u=...
+      placeholder: https://gitrishta.vercel.app/?u=...
   - type: textarea
     id: what
     attributes:
