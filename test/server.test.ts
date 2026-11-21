@@ -156,5 +156,6 @@ describe('fetchAvatar', () => {
     vi.stubGlobal('fetch', f);
     expect(await fetchAvatar(src)).toMatch(/^data:image\/png;base64,/);
     expect((f.mock.calls[0] as unknown as [URL, RequestInit])[1].redirect).toBe('error');
+    expect(new Headers((f.mock.calls[0] as unknown as [URL, RequestInit])[1].headers).get('user-agent')).toBe('gitrishta');
   });
 });
