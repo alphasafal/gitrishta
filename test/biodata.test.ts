@@ -51,4 +51,15 @@ describe('matchKundli', () => {
     expect(matchKundli(a, a).score).toBe(36);
     expect(matchKundli(a, b).score).toBe(matchKundli(b, a).score);
   });
+
+  it('reports five kootas that add up to the score, with symmetric advice', () => {
+    const a = profile(), b = profile({ login: 'other' }, [], []);
+    const ab = matchKundli(a, b), ba = matchKundli(b, a);
+    expect(ab.kootas).toHaveLength(5);
+    expect(Math.max(4, ab.kootas.reduce((s, k) => s + k.score, 0))).toBe(ab.score);
+    for (const k of ab.kootas) expect(k.score).toBeLessThanOrEqual(k.max);
+    expect(ab.advice).toBe(ba.advice);
+    expect(ab.band).toBe(ab.score >= 28 ? 'great' : ab.score >= 18 ? 'ok' : 'bad');
+    expect(matchKundli(a, a).common).toContain('Both speak TypeScript');
+  });
 });
